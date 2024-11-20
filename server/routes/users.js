@@ -3,26 +3,32 @@ const router = express.Router();
 const fs = require("fs");
 const path = require("path");
 const urlUsersFolders = path.join(__dirname, "..", "users-folders");
-// const app = express();
-/* GET users listing. */
+
+function validatePath(filePath) {
+  if (fs.existsSync(filePath)) {
+    console.log(`The path '${filePath}' exists.`);
+    return true;
+  } else {
+    console.log(`The path '${filePath}' does not exist.`);
+    return false;
+  }
+}
+
 router.get("/folders/", function (req, res, next) {
   res.send("respond with a resource");
 });
 function isExist(name, password = "nothing") {
   const filePath = path.join(__dirname, "..", "users.json");
+  let users;
+  try {
+    users = JSON.parse(fs.readFileSync(filePath));
+  } catch (err) {
+    console.error("Error reading or parsing users.json:", err);
+    return false;
+  }
 
-  // Read the file and parse the JSON
-  const users = JSON.parse(fs.readFileSync(filePath));
-
-  // Log input and file data for debugging
-  console.log("name", name);
-  console.log("pass", password);
-  console.log("fileData: ", users);
-
-  // Find the user by name
   const user = users.find((user) => user.name === name);
 
-  // Check if the user exists and handle the password condition
   if (user) {
     if (password === "nothing" || user.password === password) {
       console.log("User found: ", user);
@@ -30,7 +36,7 @@ function isExist(name, password = "nothing") {
     }
   }
 
-  console.log("User not found or password mismatch");
+  console.log("User not found or password mis-match");
   return false;
 }
 
@@ -40,30 +46,40 @@ router.post("/signIn", (req, res) => {
   if (!isExist(userName)) {
     fs.mkdir(path.join(urlUsersFolders, userName), (err) => {
       if (err) {
-        return console.log(err);
+        console.error("Error creating directory:", err);
+        return res.status(500).send({ message: "Error creating directory" });
       }
       console.log("directory created!");
-      // message: to the client the directory
+      // return res.send({ message: "directory created!" });
     });
   } else {
     console.log("name alredy exist");
+    return res.status(500).send({ message: "Name already exists" });
   }
 });
 
 router.post("/logIn", (req, res) => {
-  console.log("im here");
+  console.log("LogIn request received");
 
   const userName = req.body.name;
   const password = req.body.password;
   console.log("isExist(userName, password): ", isExist(userName, password));
 
-  if (isExist(userName, password)) {
-    console.log("im tryting to get the directory");
-    const fileName = fs.readdirSync(`${urlUsersFolders}/${userName}`);
-    console.log("fileName: ", fileName);
-    // message:  send to the client his files
+  try {
+    if (isExist(userName, password)) {
+      console.log("Retrieving directory contents...");
+      const fileName = fs.readdirSync(`${urlUsersFolders}/${userName}`);
+      console.log("fileName: ", fileName);
+      return res.send({ fileName });
+    } else {
+      return res.status(401).send({ message: "Invalid username or password" });
+    }
+  } catch (err) {
+    console.error("Error during login:", err);
+    return res.status(500).send({ message: "Error during login" });
   }
 });
+
 router.delete("/users-folder/:name", (req, res) => {
   const fileName = req.body.fileName;
   const userName = req.params.name;
@@ -75,10 +91,30 @@ router.delete("/users-folder/:name", (req, res) => {
 
   fs.unlink(filePath, (err) => {
     if (err) {
-      console.error(err);
-    } else {
-      console.log("File is deleted.");
+      console.error("Error deleting file:", err);
+      return res.status(500).send({ message: "Error deleting file" });
     }
+    console.log("File deleted successfully.");
+    return res.send({ message: "File deleted successfully." });
+  });
+});
+
+router.patch("/users-folder/:name", (req, res) => {
+  const userName = req.params.name;
+  const { oldFileName, newFileName } = req.body;
+
+  const oldFilePath = path.join(urlUsersFolders, userName, oldFileName);
+  const newFilePath = path.join(urlUsersFolders, userName, newFileName);
+
+  fs.rename(oldFilePath, newFilePath, (err) => {
+    if (err) {
+      console.error("Error renaming file:", err);
+      // return res.status(500).send({ message: "Error renaming file" });
+    }
+    console.log(`File renamed from ${oldFileName} to ${newFileName}`);
+    return res.send({
+      message: `File renamed from ${oldFileName} to ${newFileName}`,
+    });
   });
 });
 function validatePath(filePath) {
