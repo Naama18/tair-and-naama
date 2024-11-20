@@ -49,9 +49,7 @@ router.post("/signIn", (req, res) => {
     console.log("name alredy exist");
   }
 });
-// app.get("/logIn", (req, res) => {
-//   res.send("In log in");
-// });
+
 router.post("/logIn", (req, res) => {
   console.log("im here");
 
@@ -83,8 +81,78 @@ router.delete("/users-folder/:name", (req, res) => {
     }
   });
 });
+function validatePath(filePath) {
+  if (fs.existsSync(filePath)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+router.post("/users-folder/:name", (req, res) => {
+  const type = req.body.type; // check if he try to add folder or file
+  console.log("type: ", type);
+  const userName = req.params.name;
+  const filePath = path.join(__dirname, "..", `users-folders/${userName}`);
 
-// app.listen(4000, () => {
-//   console.log("..");
-// });
+  if (type === "file") {
+    const nameOfFile = req.body.fileName;
+
+    if (validatePath(`${filePath}/${nameOfFile}`)) {
+      console.log("file name already exist");
+    } else {
+      fs.open(`${filePath}/${nameOfFile}`, "w", function (err, file) {
+        if (err) throw err;
+        console.log("Saved!");
+      });
+    }
+  } else if (type === "folder") {
+    const nameOfFolder = req.body.folderName;
+
+    if (validatePath(`${filePath}/${nameOfFolder}`)) {
+      console.log("folder name already exist");
+    } else {
+      fs.mkdir(`${filePath}/${nameOfFolder}`, (err) => {
+        if (err) {
+          return console.log(err);
+        }
+        console.log("directory created!");
+        // message: to the client the directory
+      });
+    }
+  }
+});
+router.patch("/users-folder/:name/:filename", (req, res) => {
+  const fileNameToEdit = req.params.filename;
+  const name = req.params.name;
+  const content = req.body.content;
+  fs.writeFile(
+    `${urlUsersFolders}/${name}/${fileNameToEdit}`,
+    content,
+    { flag: "a+" },
+    (err) => {
+      if (err) {
+        console.log(err);
+      } else {
+        console.log("add content");
+      }
+    }
+  );
+});
+router.get("/users-folder/:name", (req, res) => {
+  console.log("im here");
+  const fileName = req.body.filename;
+  const name = req.params.name;
+
+  fs.stat(`${urlUsersFolders}/${name}/${fileName}`, (err, stats) => {
+    if (err) {
+      console.error(err);
+      return;
+    }
+
+    console.log(stats.isFile());
+    console.log(" stats.isDirectory();: ", stats.isDirectory());
+    console.log("stats.isSymbolicLink(): ", stats.isSymbolicLink());
+    console.log("stats.size: ", stats.size);
+  });
+});
 module.exports = router;
