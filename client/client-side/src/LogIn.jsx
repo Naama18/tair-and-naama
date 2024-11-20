@@ -42,7 +42,7 @@ export default function LogIn({ isConnected, setIsConnected }) {
       console.log(fileName);
 
       // Pass fileName as state to Files component
-      navigate("/Files", { state: { fileName: fileName } });
+      navigate(`/Files/${user}`, { state: { fileName: fileName, name: user } });
     } catch (error) {
       console.error("Error:", error);
     }

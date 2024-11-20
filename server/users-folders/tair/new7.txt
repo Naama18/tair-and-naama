@@ -1,4 +1,0 @@
-shops:
-hamburger
-clothes
-pizza

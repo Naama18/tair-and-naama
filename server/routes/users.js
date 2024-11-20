@@ -90,6 +90,7 @@ router.post("/logIn", (req, res) => {
 
 router.delete("/users-folder/:name", (req, res) => {
   const fileName = req.body.fileName;
+  console.log("fileName: ", fileName);
   const userName = req.params.name;
   const filePath = path.join(
     __dirname,
