@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const fs = require("fs");
 const path = require("path");
+const urlUsersFolders = path.join(__dirname, "..", "users-folders");
 // const app = express();
 /* GET users listing. */
 router.get("/folders/", function (req, res, next) {
@@ -35,10 +36,9 @@ function isExist(name, password = "nothing") {
 
 router.post("/signIn", (req, res) => {
   const userName = req.body.name;
-  const filePath = path.join(__dirname, "..", "users-folders");
 
   if (!isExist(userName)) {
-    fs.mkdir(path.join(filePath, userName), (err) => {
+    fs.mkdir(path.join(urlUsersFolders, userName), (err) => {
       if (err) {
         return console.log(err);
       }
@@ -54,7 +54,6 @@ router.post("/signIn", (req, res) => {
 // });
 router.post("/logIn", (req, res) => {
   console.log("im here");
-  const filePath = path.join(__dirname, "..", "users-folders");
 
   const userName = req.body.name;
   const password = req.body.password;
@@ -62,11 +61,29 @@ router.post("/logIn", (req, res) => {
 
   if (isExist(userName, password)) {
     console.log("im tryting to get the directory");
-    const fileName = fs.readdirSync(`${filePath}/${userName}`);
+    const fileName = fs.readdirSync(`${urlUsersFolders}/${userName}`);
     console.log("fileName: ", fileName);
     // message:  send to the client his files
   }
 });
+router.delete("/users-folder/:name", (req, res) => {
+  const fileName = req.body.fileName;
+  const userName = req.params.name;
+  const filePath = path.join(
+    __dirname,
+    "..",
+    `users-folders/${userName}/${fileName}`
+  );
+
+  fs.unlink(filePath, (err) => {
+    if (err) {
+      console.error(err);
+    } else {
+      console.log("File is deleted.");
+    }
+  });
+});
+
 // app.listen(4000, () => {
 //   console.log("..");
 // });
