@@ -1,3 +1,6 @@
+const path = require("path");
+const fs = require("fs");
+
 exports.validatePath = function (filePath) {
   if (fs.existsSync(filePath)) {
     console.log(`The path '${filePath}' exists.`);

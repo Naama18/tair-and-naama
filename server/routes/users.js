@@ -4,23 +4,61 @@ const fs = require("fs");
 const path = require("path");
 const urlUsersFolders = path.join(__dirname, "..", "users-folders");
 
-const helpes_function = require("../helpers");
+// const helpes_function = require("../helpers");
 
 router.get("/folders/", function (req, res, next) {
   res.send("respond with a resource");
 });
+function validatePath(filePath) {
+  if (fs.existsSync(filePath)) {
+    console.log(`The path '${filePath}' exists.`);
+    return true;
+  } else {
+    console.log(`The path '${filePath}' does not exist.`);
+    return false;
+  }
+}
+function isExist(name, password = "nothing") {
+  const filePath = path.join(__dirname, "..", "users.json");
+  let users;
+  try {
+    users = JSON.parse(fs.readFileSync(filePath));
+  } catch (err) {
+    console.error("Error reading or parsing users.json:", err);
+    return false;
+  }
+
+  const user = users.find((user) => user.name === name);
+
+  if (user) {
+    if (password === "nothing" || user.password === password) {
+      console.log("User found: ", user);
+      return true;
+    }
+  }
+
+  console.log("User not found or password mis-match");
+  return false;
+}
 
 router.post("/signIn", (req, res) => {
-  const userName = req.body.name;
+  const urlJson = path.join(__dirname, "..", "users.json");
 
-  if (!helpes_function.isExist(userName)) {
+  const userName = req.body.name;
+  const password = req.body.password;
+
+  if (!isExist(userName)) {
+    const fileData = JSON.parse(fs.readFileSync(urlJson));
+    fileData.push({ name: userName, password: password });
+    fs.writeFileSync(urlJson, JSON.stringify(fileData));
     fs.mkdir(path.join(urlUsersFolders, userName), (err) => {
       if (err) {
         console.error("Error creating directory:", err);
         return res.status(500).send({ message: "Error creating directory" });
       }
-      console.log("directory created!");
-      // return res.send({ message: "directory created!" });
+      const fileName = fs.readdirSync(`${urlUsersFolders}/${userName}`);
+
+      return res.send({ fileName });
     });
   } else {
     console.log("name alredy exist");
@@ -33,13 +71,10 @@ router.post("/logIn", (req, res) => {
 
   const userName = req.body.name;
   const password = req.body.password;
-  console.log(
-    "isExist(userName, password): ",
-    helpes_function.isExist(userName, password)
-  );
+  console.log("isExist(userName, password): ", isExist(userName, password));
 
   try {
-    if (helpes_function.isExist(userName, password)) {
+    if (isExist(userName, password)) {
       console.log("Retrieving directory contents...");
       const fileName = fs.readdirSync(`${urlUsersFolders}/${userName}`);
       console.log("fileName: ", fileName);
@@ -106,7 +141,7 @@ router.post("/users-folder/:name", (req, res) => {
   if (type === "file") {
     const nameOfFile = req.body.fileName;
 
-    if (helpes_function.validatePath(`${filePath}/${nameOfFile}`)) {
+    if (validatePath(`${filePath}/${nameOfFile}`)) {
       console.log("file name already exist");
     } else {
       fs.open(`${filePath}/${nameOfFile}`, "w", function (err, file) {
@@ -117,7 +152,7 @@ router.post("/users-folder/:name", (req, res) => {
   } else if (type === "folder") {
     const nameOfFolder = req.body.folderName;
 
-    if (helpes_function.validatePath(`${filePath}/${nameOfFolder}`)) {
+    if (validatePath(`${filePath}/${nameOfFolder}`)) {
       console.log("folder name already exist");
     } else {
       fs.mkdir(`${filePath}/${nameOfFolder}`, (err) => {
