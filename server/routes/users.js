@@ -82,14 +82,16 @@ router.delete("/users-folder/:name", (req, res) => {
     const userName = req.params.name;
     const filePath = path.join(__dirname, "..", `users-folders/${userName}/${fileName}`);
 
-    fs.unlink(filePath, (err) => {
-        if (err) {
-            console.error("Error deleting file:", err);
-            return res.status(500).send({ message: "Error deleting file" });
-        }
-        console.log("File deleted successfully.");
-        return res.send({ message: "File deleted successfully." });
-    });
+    //add some function that delete the path (while i press delete)
+
+    //     fs.unlink(filePath, (err) => {
+    //         if (err) {
+    //             console.error("Error deleting file:", err);
+    //             return res.status(500).send({ message: "Error deleting file" });
+    //         }
+    //         console.log("File deleted successfully.");
+    //         return res.send({ message: "File deleted successfully." });
+    //     });
 });
 
 router.patch("/users-folder/:name", (req, res) => {
@@ -157,23 +159,7 @@ router.patch("/users-folder/:name/:filename", (req, res) => {
         }
     });
 });
-// router.get("/users-folder/:name", (req, res) => {
-//   console.log("im here");
-//   const fileName = req.body.filename;
-//   const name = req.params.name;
 
-//   fs.stat(`${urlUsersFolders}/${name}/${fileName}`, (err, stats) => {
-//     if (err) {
-//       console.error(err);
-//       return;
-//     }
-
-//     console.log(stats.isFile());
-//     console.log(" stats.isDirectory();: ", stats.isDirectory());
-//     console.log("stats.isSymbolicLink(): ", stats.isSymbolicLink());
-//     console.log("stats.size: ", stats.size);
-//   });
-// });
 router.get("/users-folder/:name", (req, res) => {
     const name = req.params.name;
 
@@ -181,3 +167,8 @@ router.get("/users-folder/:name", (req, res) => {
     res.send({ filenames: fileNames });
 });
 module.exports = router;
+router.get("/users-folder/:name", (req, res) => {
+    const name = req.params.name;
+    const fillName = fs.readdirSync(`${urlUsersFolders}/${name}`);
+    res.send({ fileNames: fileNames });
+});
