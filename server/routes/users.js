@@ -141,6 +141,7 @@ router.post("/users-folder/:name", (req, res) => {
 
   if (type === "file") {
     const nameOfFile = req.body.fileName;
+    console.log("nameOfFile: ", nameOfFile);
 
     if (validatePath(`${filePath}/${nameOfFile}`)) {
       console.log("file name already exist");
@@ -183,21 +184,27 @@ router.patch("/users-folder/:name/:filename", (req, res) => {
     }
   );
 });
+// router.get("/users-folder/:name", (req, res) => {
+//   console.log("im here");
+//   const fileName = req.body.filename;
+//   const name = req.params.name;
+
+//   fs.stat(`${urlUsersFolders}/${name}/${fileName}`, (err, stats) => {
+//     if (err) {
+//       console.error(err);
+//       return;
+//     }
+
+//     console.log(stats.isFile());
+//     console.log(" stats.isDirectory();: ", stats.isDirectory());
+//     console.log("stats.isSymbolicLink(): ", stats.isSymbolicLink());
+//     console.log("stats.size: ", stats.size);
+//   });
+// });
 router.get("/users-folder/:name", (req, res) => {
-  console.log("im here");
-  const fileName = req.body.filename;
   const name = req.params.name;
 
-  fs.stat(`${urlUsersFolders}/${name}/${fileName}`, (err, stats) => {
-    if (err) {
-      console.error(err);
-      return;
-    }
-
-    console.log(stats.isFile());
-    console.log(" stats.isDirectory();: ", stats.isDirectory());
-    console.log("stats.isSymbolicLink(): ", stats.isSymbolicLink());
-    console.log("stats.size: ", stats.size);
-  });
+  const fileNames = fs.readdirSync(`${urlUsersFolders}/${name}`);
+  res.send({ filenames: fileNames });
 });
 module.exports = router;

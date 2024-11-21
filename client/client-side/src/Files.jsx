@@ -1,64 +1,109 @@
-import { useLocation, useNavigate } from "react-router-dom";
-import { Delete } from "./contact-server"; // assuming Delete is an API function for deletion
-import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Delete, addFolder, addFile, rename } from "./contact-server";
+import { useUser } from "./UserContext";
+import { useEffect } from "react";
 
 function Files() {
-  // Get location data (file names and user name)
-  const location = useLocation();
-  const fileNames = location.state?.fileName || []; // Default to an empty array if no fileNames
+  const { setUser, user, fileName, setFileName } = useUser();
 
-  const navigate = useNavigate();
+  const params = useParams();
 
-  const userName = location.state?.name;
-  console.log("fileNames: ", fileNames);
-  console.log("userName: ", userName);
+  useEffect(() => {
+    if (!params.username) return;
+    setUser(params.username);
+  }, [params.username]);
 
-  // Set initial state of files from location state
-  const [files, setFiles] = useState(fileNames);
-
-  // Handle delete functionality
   function handleDelete(fileToDelete) {
-    // Find the index of the file to delete
-    const index = files.findIndex((file) => file === fileToDelete);
-    console.log("index: ", index);
+    const index = fileName.findIndex((file) => file === fileToDelete);
 
     if (index !== -1) {
-      // Create a new array without the deleted file
-      const updatedFiles = [...files]; // Copy the files array
-      updatedFiles.splice(index, 1); // Remove the file at the found index
+      const updatedFiles = [...fileName];
+      updatedFiles.splice(index, 1);
 
-      // Update the state with the new files list
-      setFiles(updatedFiles);
-      console.log("Updated files: ", updatedFiles);
-      navigate(".", { state: { ...location.state, fileName: updatedFiles } });
+      setFileName(updatedFiles);
     }
   }
 
-  // Render the component
+  function handleAddFile(newFileName) {
+    // setFileName((prev) => prev.push(newFileName));
+    setFileName((prev) => [...prev, newFileName]);
+  }
+
+  function handleAddFolder(newFolderName) {
+    setFileName((prev) => [...prev, newFolderName]);
+    // setFileName((prev) => prev.push(newFolderName));
+  }
+
+  function handleRename(newName, oldName) {
+    let index;
+    for (let i = 0; i < fileName.length; i++) {
+      if (fileName[i] === oldName) {
+        setFileName((prev) => {
+          const updatedFileNames = [...prev];
+          updatedFileNames[i] = newName;
+          return updatedFileNames; // Return the updated array (important!)
+        });
+      }
+    }
+  }
+
   return (
     <div>
-      <button>Add Folder</button>
-      <button>Add File</button>
+      <button
+        onClick={() => {
+          {
+            const newFolderName = prompt(
+              "insert the folder name you want to add"
+            );
+            if (addFolder(user, newFolderName)) {
+              handleAddFolder(newFolderName);
+            } else {
+              alert("error");
+            }
+          }
+        }}
+      >
+        Add Folder
+      </button>
+      <button
+        onClick={() => {
+          const newFileName = prompt("insert the file name you want to add");
+
+          if (addFile(user, newFileName)) {
+            handleAddFile(newFileName);
+          } else {
+            alert("error");
+          }
+        }}
+      >
+        Add File
+      </button>
 
       <h3>File Names:</h3>
-      {/* If files array is empty, show a message */}
-      {files.length === 0 ? (
+      {fileName.length === 0 ? (
         <div>No files available</div>
       ) : (
         <ul>
-          {files.map((name, index) => (
+          {fileName.map((name, index) => (
             <li key={index}>
               {name}
-              {/* Delete button to handle file removal */}
               <button
                 onClick={() => {
-                  Delete(name, userName); // Call the delete API
-                  handleDelete(name); // Handle deletion in the UI
+                  Delete(name, user);
+                  handleDelete(name);
                 }}
               >
                 Delete
               </button>
-              <button>Rename</button>
+              <button
+                onClick={() => {
+                  const newName = prompt("insert the new name of the file");
+                  rename(user, name, newName);
+                  handleRename(name, newName);
+                }}
+              >
+                Rename
+              </button>
               <button>More details</button>
               <button>Add content</button>
             </li>

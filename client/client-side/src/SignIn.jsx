@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { useUser } from "./UserContext";
 export default function SignIn({ isConnected, setIsConnected }) {
   const url = "http://localhost:3000/signIn";
-  const [user, setUser] = useState("");
+  const { user, fileName } = useUser();
+  const { setUser, setFileName } = useUser();
+
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
@@ -19,9 +21,6 @@ export default function SignIn({ isConnected, setIsConnected }) {
     const headers = new Headers();
     headers.append("Content-Type", "application/json");
 
-    console.log("user", user);
-    console.log("password", password);
-
     try {
       const response = await fetch(url, {
         method: "POST",
@@ -35,17 +34,15 @@ export default function SignIn({ isConnected, setIsConnected }) {
 
       // Wait for the response to be parsed as JSON
       const result = await response.json();
-      console.log("result: ", result);
 
       // Extract fileName from the result
       const fileName = result.fileName;
 
-      console.log(fileName);
-
       // Navigate to Files/{username} with username as part of the URL
-      navigate(`/Files/${user}`, {
-        state: { fileName: fileName, name: user },
-      });
+      navigate(
+        `/Files/${user}`
+        // state: { fileName: fileName, name: user },
+      );
     } catch (error) {
       console.error("Error:", error);
     }
