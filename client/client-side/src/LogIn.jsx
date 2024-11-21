@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "./UserContext";
 import Files from "./Files";
 export default function LogIn({ isConnected, setIsConnected }) {
   const url = "http://localhost:3000/logIn";
-  const [user, setUser] = useState("");
+  // const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
+  const { setUser, setFileName } = useUser();
+  const { user, fileName } = useUser();
+
   const navigate = useNavigate();
 
   function handleChangeName(event) {
@@ -18,9 +22,6 @@ export default function LogIn({ isConnected, setIsConnected }) {
   async function handleSubmit() {
     const headers = new Headers();
     headers.append("Content-Type", "application/json");
-
-    console.log("user", user);
-    console.log("password", password);
 
     try {
       const response = await fetch(url, {
@@ -36,13 +37,10 @@ export default function LogIn({ isConnected, setIsConnected }) {
       // Wait for the response to be parsed as JSON
       const result = await response.json();
 
-      // Extract fileName from the result
       const fileName = result.fileName;
+      setFileName(fileName);
 
-      console.log(fileName);
-
-      // Pass fileName as state to Files component
-      navigate(`/Files/${user}`, { state: { fileName: fileName, name: user } });
+      navigate(`/Files/${user}`);
     } catch (error) {
       console.error("Error:", error);
     }

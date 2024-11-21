@@ -4,8 +4,35 @@ const fs = require("fs");
 const path = require("path");
 const urlUsersFolders = path.join(__dirname, "..", "users-folders");
 
-const helpes_function = require("../helpers");
+// const helpes_function = require("../helpers");
+function isExist(name, password = "nothing") {
+    const filePath = path.join(__dirname, "..", "users.json");
+    let users;
+    try {
+        users = JSON.parse(fs.readFileSync(filePath));
+    } catch (err) {
+        console.error("Error reading or parsing users.json:", err);
+        return false;
+    }
 
+    const user = users.find((user) => user.name === name);
+
+    if (user) {
+        if (password === "nothing" || user.password === password) {
+            console.log("User found: ", user);
+            return true;
+        }
+    }
+}
+function validatePath(filePath) {
+    if (fs.existsSync(filePath)) {
+        console.log(`The path '${filePath}' exists.`);
+        return true;
+    } else {
+        console.log(`The path '${filePath}' does not exist.`);
+        return false;
+    }
+}
 router.get("/folders/", function (req, res, next) {
     res.send("respond with a resource");
 });
@@ -13,7 +40,7 @@ router.get("/folders/", function (req, res, next) {
 router.post("/signIn", (req, res) => {
     const userName = req.body.name;
 
-    if (!helpes_function.isExist(userName)) {
+    if (!isExist(userName)) {
         fs.mkdir(path.join(urlUsersFolders, userName), (err) => {
             if (err) {
                 console.error("Error creating directory:", err);
@@ -33,10 +60,10 @@ router.post("/logIn", (req, res) => {
 
     const userName = req.body.name;
     const password = req.body.password;
-    console.log("isExist(userName, password): ", helpes_function.isExist(userName, password));
+    console.log("isExist(userName, password): ", isExist(userName, password));
 
     try {
-        if (helpes_function.isExist(userName, password)) {
+        if (isExist(userName, password)) {
             console.log("Retrieving directory contents...");
             const fileName = fs.readdirSync(`${urlUsersFolders}/${userName}`);
             console.log("fileName: ", fileName);
@@ -75,7 +102,7 @@ router.patch("/users-folder/:name", (req, res) => {
     fs.rename(oldFilePath, newFilePath, (err) => {
         if (err) {
             console.error("Error renaming file:", err);
-            return res.status(500).send({ message: "Error renaming file" });
+            // return res.status(500).send({ message: "Error renaming file" });
         }
         console.log(`File renamed from ${oldFileName} to ${newFileName}`);
         return res.send({
@@ -92,8 +119,9 @@ router.post("/users-folder/:name", (req, res) => {
 
     if (type === "file") {
         const nameOfFile = req.body.fileName;
+        console.log("nameOfFile: ", nameOfFile);
 
-        if (helpes_function.validatePath(`${filePath}/${nameOfFile}`)) {
+        if (validatePath(`${filePath}/${nameOfFile}`)) {
             console.log("file name already exist");
         } else {
             fs.open(`${filePath}/${nameOfFile}`, "w", function (err, file) {
@@ -104,7 +132,7 @@ router.post("/users-folder/:name", (req, res) => {
     } else if (type === "folder") {
         const nameOfFolder = req.body.folderName;
 
-        if (helpes_function.validatePath(`${filePath}/${nameOfFolder}`)) {
+        if (validatePath(`${filePath}/${nameOfFolder}`)) {
             console.log("folder name already exist");
         } else {
             fs.mkdir(`${filePath}/${nameOfFolder}`, (err) => {
@@ -129,21 +157,27 @@ router.patch("/users-folder/:name/:filename", (req, res) => {
         }
     });
 });
+// router.get("/users-folder/:name", (req, res) => {
+//   console.log("im here");
+//   const fileName = req.body.filename;
+//   const name = req.params.name;
+
+//   fs.stat(`${urlUsersFolders}/${name}/${fileName}`, (err, stats) => {
+//     if (err) {
+//       console.error(err);
+//       return;
+//     }
+
+//     console.log(stats.isFile());
+//     console.log(" stats.isDirectory();: ", stats.isDirectory());
+//     console.log("stats.isSymbolicLink(): ", stats.isSymbolicLink());
+//     console.log("stats.size: ", stats.size);
+//   });
+// });
 router.get("/users-folder/:name", (req, res) => {
-    console.log("im here");
-    const fileName = req.body.filename;
     const name = req.params.name;
 
-    fs.stat(`${urlUsersFolders}/${name}/${fileName}`, (err, stats) => {
-        if (err) {
-            console.error(err);
-            return;
-        }
-
-        console.log(stats.isFile());
-        console.log(" stats.isDirectory();: ", stats.isDirectory());
-        console.log("stats.isSymbolicLink(): ", stats.isSymbolicLink());
-        console.log("stats.size: ", stats.size);
-    });
+    const fileNames = fs.readdirSync(`${urlUsersFolders}/${name}`);
+    res.send({ filenames: fileNames });
 });
 module.exports = router;
